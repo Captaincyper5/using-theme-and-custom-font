@@ -1,6 +1,6 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
-import 'package:drop_down_list/drop_down_list.dart';
-import 'package:drop_down_list/model/selected_list_item.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -9,257 +9,331 @@ class Home extends StatefulWidget {
 }
 
 class _MyState extends State<Home> {
-  final TextEditingController _country = TextEditingController();
-  final TextEditingController _age = TextEditingController();
-  final TextEditingController _firstName = TextEditingController();
-  final TextEditingController _lastName = TextEditingController();
-  final TextEditingController _year = TextEditingController();
-  final TextEditingController _month = TextEditingController();
-  final TextEditingController _day = TextEditingController();
-  final List<String> _countries = [
-    "sudan",
-    "egypt",
-    "algeria",
-    "moroco",
-    "tunnies",
-    "eritrea",
-    "ethiopia",
-    "lybia",
-    "somalia",
-  ];
-  final List<String> _months = [
-    "januarey",
-    "februarey",
-    "mars",
-    "april",
-    "may",
-    "june",
-    "july",
-    "augest",
-    "septemper",
-    "october",
-    "novamber",
-    "december",
-  ];
+  GlobalKey<ScaffoldState> inputkey = GlobalKey();
+  TextEditingController input = TextEditingController();
+  String savedNum1 = "";
+  String savedOperator = "";
+  void addChar(String char) {
+    if (input.text == "0" && char == "0") {
+      return;
+    }
+    if (input.text == "0" && char != ".") {
+      setState(() {
+        input.text = char;
+      });
+      return;
+    }
+    if (char == ".") {
+      if (input.text.contains(".")) {
+        return;
+      }
+      if (input.text.isEmpty) {
+        setState(() {
+          input.text = "0.";
+        });
+        return;
+      }
+    }
+    if (input.text.length < 10) {
+      setState(() {
+        input.text += char;
+      });
+      return;
+    }
+  }
+
+  void delChar() {
+    if (input.text.isNotEmpty) {
+      setState(() {
+        input.text = input.text.substring(0, input.text.length - 1);
+      });
+    }
+  }
+
+  void calc(String operator) {
+    if (operator == "-" && input.text == "") {
+      addChar("-");
+      return;
+    } else {
+      String num1 = input.text;
+      setState(() {
+        savedNum1 = num1;
+        savedOperator = operator;
+        input.text = "";
+      });
+      return;
+    }
+  }
+
+  void equal(String num2) {
+    num2 = input.text;
+    double n1 = double.parse(savedNum1);
+    double n2 = double.parse(num2);
+    double result = 0;
+    switch (savedOperator) {
+      case "+":
+        result = n1 + n2;
+        break;
+      case "-":
+        result = n1 - n2;
+        break;
+      case "x":
+        result = n1 * n2;
+        break;
+      case "/":
+        if (n1 != 0 && n2 != 0) {
+          result = n1 / n2;
+        } else {
+          result = 0;
+        }
+        break;
+      case "%":
+        if (n1 != 0 && n2 != 0) {
+          result = n1 % n2;
+        }
+        if (n1 != 0 && n2 == 0) {
+          result = n1;
+        }
+      case "pow":
+        result = pow(n1, n2).toDouble();
+    }
+    if (result % 1 == 0) {
+      setState(() {
+        input.text = (result.toInt()).toString();
+      });
+    } else {
+      setState(() {
+        input.text = result.toString();
+      });
+    }
+  }
+
+  void toggleSign() {
+    if (input.text.isEmpty || input.text == "0") return;
+    setState(() {
+      if (input.text.startsWith("-")) {
+        input.text = input.text.substring(1);
+      } else {
+        input.text = "-${input.text}";
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Center(
-          child: Text('Sign up', style: TextStyle(fontWeight: FontWeight.bold)),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('MY APP'),
+          backgroundColor: Colors.blue,
+          foregroundColor: Colors.white,
         ),
-        backgroundColor: Colors.blue,
-        foregroundColor: Colors.white,
-      ),
-      body: ListView(
-        children: [
-          Column(
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: _Custom3(
-                      controller: _firstName,
-                      title: "first name",
-                    ),
-                  ),
-                  Expanded(
-                    child: _Custom3(controller: _lastName, title: "last name"),
-                  ),
-                ],
-              ),
-              _Custom2(
-                controller: _age,
-                data: 28,
-                builder: ((index) => index + 18),
-                title: "select your age",
-              ),
-              _Custom1(
-                controller: _country,
-                data: _countries,
-                title: "country",
-              ),
-              Container(
-                margin: EdgeInsets.fromLTRB(0, 10, 240, 0),
-                child: Text(
-                  "date of brith",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+        body: Column(
+          children: [
+            Expanded(
+              child: Form(
+                child: TextFormField(
+                  maxLength: 10,
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+                  controller: input,
+                  readOnly: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  decoration: InputDecoration(hintText: "|", counterText: ""),
                 ),
               ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _Custom2(
-                      controller: _year,
-                      data: 30,
-                      builder: ((index) => "${1997 + index}"),
-                      title: "year",
-                    ),
-                  ),
-                  Expanded(
-                    child: _Custom1(
-                      controller: _month,
-                      data: _months,
-                      title: "month",
-                    ),
-                  ),
-                  Expanded(
-                    child: _Custom2(
-                      controller: _day,
-                      data: 31,
-                      builder: (index) => "${index + 1}",
-                      title: "day",
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Custom1 extends StatefulWidget {
-  const _Custom1({
-    required this.controller,
-    required this.data,
-    required this.title,
-  });
-  final TextEditingController controller;
-  final List<String> data;
-  final String title;
-
-  @override
-  State<_Custom1> createState() => _Custom1State();
-}
-
-class _Custom1State extends State<_Custom1> {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-      child: TextFormField(
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: widget.title,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
-        ),
-        controller: widget.controller,
-        onTap: () {
-          DropDownState(
-            dropDown: DropDown(
-              // 1. تحديد العنوان وخيار البحث
-              submitButtonText: "تم",
-              clearButtonText: "مسح",
-              // 2. تمرير البيانات مع تحديد النوع (String مثلاً)
-              data: [
-                ...List.generate(widget.data.length, (index) {
-                  return SelectedListItem<String>(
-                    data: widget.data[index],
-                    isSelected: false,
-                  );
-                }),
-              ],
-
-              // 3. الاستجابة عند اختيار عنصر
-              onSelected: (List<SelectedListItem<dynamic>> selectedList) {
-                if (selectedList.isNotEmpty) {
-                  // الحصول على العنصر المختار
-                  String selectedValue = selectedList.first.data;
-                  widget.controller.text = selectedValue;
-                  setState(() {});
-                }
-              },
-
-              // 4. خيارات إضافية
-              enableMultipleSelection: false, // اختيار مفرد
             ),
-          ).showModal(context);
-        },
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _CalcButton(
+                    title: "1",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "2",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "3",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "del",
+                    builder: (title) => delChar(),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "+",
+                    builder: (title) => calc(title),
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _CalcButton(
+                    title: "4",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "5",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "6",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "%",
+                    builder: (title) => calc(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "x",
+                    builder: (title) => calc(title),
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _CalcButton(
+                    title: "7",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "8",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "9",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "pow",
+                    builder: (title) => calc(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "-",
+                    builder: (title) => calc(title),
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _CalcButton(
+                    title: ".",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "0",
+                    builder: (title) => addChar(title),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "-/+",
+                    builder: (title) => toggleSign(),
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "C",
+                    builder: (title) {
+                      setState(() {
+                        input.text = "";
+                      });
+                    },
+                    color: Colors.red,
+                  ),
+                ),
+                Expanded(
+                  child: _CalcButton(
+                    title: "/",
+                    builder: (title) => calc(title),
+                    color: Colors.orange,
+                  ),
+                ),
+              ],
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: _CalcButton(
+                    title: "=",
+                    builder: (title) => equal(title),
+                    color: Colors.deepOrange,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _Custom2 extends StatefulWidget {
-  const _Custom2({
-    required this.controller,
-    required this.data,
+class _CalcButton extends StatelessWidget {
+  const _CalcButton({
+    required this.title,
     required this.builder,
-    required this.title,
+    this.color = Colors.white,
   });
-  final TextEditingController controller;
-  final int data;
-  final dynamic Function(int index) builder;
   final String title;
-  @override
-  State<_Custom2> createState() => _Custom2State();
-}
-
-class _Custom2State extends State<_Custom2> {
+  final void Function(String) builder;
+  final Color color;
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-      child: TextFormField(
-        readOnly: true,
-        decoration: InputDecoration(
-          labelText: widget.title,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
-        ),
-        controller: widget.controller,
-        onTap: () {
-          DropDownState(
-            dropDown: DropDown(
-              // 1. تحديد العنوان وخيار البحث
-              submitButtonText: "تم",
-              clearButtonText: "مسح",
-              // 2. تمرير البيانات مع تحديد النوع (String مثلاً)
-              data: [
-                ...List.generate(widget.data, (index) {
-                  var day = widget.builder(index).toString();
-                  return SelectedListItem<String>(
-                    data: day.toString(),
-                    isSelected: false,
-                  );
-                }),
-              ],
-
-              // 3. الاستجابة عند اختيار عنصر
-              onSelected: (List<SelectedListItem<dynamic>> selectedList) {
-                if (selectedList.isNotEmpty) {
-                  // الحصول على العنصر المختار
-                  String selectedValue = selectedList.first.data;
-                  widget.controller.text = selectedValue;
-                  setState(() {});
-                }
-              },
-
-              // 4. خيارات إضافية
-              enableMultipleSelection: false, // اختيار مفرد
-            ),
-          ).showModal(context);
-        },
+      margin: EdgeInsets.all(0),
+      width: 90,
+      height: 50,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.black, width: 1),
       ),
-    );
-  }
-}
-
-class _Custom3 extends StatelessWidget {
-  const _Custom3({required this.controller, required this.title});
-  final TextEditingController controller;
-  final String title;
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.fromLTRB(10, 10, 10, 0),
-      child: TextFormField(
-        controller: controller,
-        decoration: InputDecoration(
-          label: Text(title),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(25)),
+      child: MaterialButton(
+        color: color,
+        onPressed: () => builder(title),
+        child: Text(
+          title,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
       ),
     );
