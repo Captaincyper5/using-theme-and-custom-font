@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 
 class Home extends StatefulWidget {
@@ -9,68 +7,94 @@ class Home extends StatefulWidget {
 }
 
 class _MyState extends State<Home> {
-  GlobalKey<ScaffoldState> inputkey = GlobalKey();
-  TextEditingController input = TextEditingController();
-  String savedNum1 = "";
-  String savedOperator = "";
-  void addChar(String char) {
-    if (input.text == "0" && char == "0") {
-      return;
-    }
-    if (input.text == "0" && char != ".") {
+  final TextEditingController _input = TextEditingController();
+  final TextEditingController _input2 = TextEditingController();
+  String _savedNum1 = "";
+  String _savedOperator = "";
+  void _addChar(String char) {
+    if (_input.text == "0" && char == "0") return;
+    if (_input.text == "0" && char != ".") {
       setState(() {
-        input.text = char;
+        _input.text = char;
+        _input2.text = char;
       });
-      return;
     }
     if (char == ".") {
-      if (input.text.contains(".")) {
-        return;
-      }
-      if (input.text.isEmpty) {
+      if (_input.text.contains(".")) return;
+      if (_input.text.isEmpty) {
         setState(() {
-          input.text = "0.";
+          _input.text = "0.";
+          _input2.text = "0.";
         });
-        return;
       }
     }
-    if (input.text.length < 10) {
+    if (_input.text.length < 10) {
       setState(() {
-        input.text += char;
-      });
-      return;
-    }
-  }
-
-  void delChar() {
-    if (input.text.isNotEmpty) {
-      setState(() {
-        input.text = input.text.substring(0, input.text.length - 1);
+        _input.text += char;
+        _input2.text += char;
       });
     }
   }
 
-  void calc(String operator) {
-    if (operator == "-" && input.text == "") {
-      addChar("-");
+  void _delChar() {
+    setState(() {
+      if (_input.text.isNotEmpty) {
+        _input.text = _input.text.substring(0, _input.text.length - 1);
+        _input2.text = _input.text.substring(0, _input2.text.length - 1);
+      }
+    });
+  }
+
+  String _formResult(double num) {
+    if (num == num.toInt()) {
+      return num.toInt().toString();
+    }
+    return double.parse(num.toStringAsFixed(4)).toString();
+  }
+
+  void _calc(String operator) {
+    if (operator == "-" && _input.text == "") {
+      _addChar("-");
       return;
     } else {
-      String num1 = input.text;
+      if (_savedNum1.isEmpty && _input.text.isEmpty) return;
+      if (_savedNum1.isNotEmpty &&
+          _input.text.isNotEmpty &&
+          _savedOperator.isNotEmpty) {
+        _calculate();
+      } else if (_input.text.isNotEmpty) {
+        _savedNum1 = _input.text;
+      }
       setState(() {
-        savedNum1 = num1;
-        savedOperator = operator;
-        input.text = "";
+        _savedOperator = operator;
+        _input.text = "";
+        if (_input2.text.endsWith("=")) {
+          _input2.text = _input2.text.substring(0, _input2.text.length - 1);
+        }
+        _input2.text += operator;
+        _input.text = "";
       });
-      return;
     }
   }
 
-  void equal(String num2) {
-    num2 = input.text;
-    double n1 = double.parse(savedNum1);
-    double n2 = double.parse(num2);
-    double result = 0;
-    switch (savedOperator) {
+  void _equal(String num2) {
+    if (_savedNum1.isEmpty || _input.text.isEmpty || _savedOperator.isEmpty) {
+      return;
+    }
+    _calculate();
+    setState(() {
+      if (!_input2.text.endsWith("=")) {
+        _input2.text += "=";
+      }
+      _savedOperator = "";
+    });
+  }
+
+  void _calculate() {
+    double n1 = double.tryParse(_savedNum1) ?? 0.0;
+    double n2 = double.tryParse(_input.text) ?? 0.0;
+    double result = 0.0;
+    switch (_savedOperator) {
       case "+":
         result = n1 + n2;
         break;
@@ -81,227 +105,150 @@ class _MyState extends State<Home> {
         result = n1 * n2;
         break;
       case "/":
-        if (n1 != 0 && n2 != 0) {
-          result = n1 / n2;
-        } else {
-          result = 0;
-        }
+        result = n2 != 0 ? n1 / n2 : 0.0;
         break;
       case "%":
         if (n1 != 0 && n2 != 0) {
           result = n1 % n2;
         }
-        if (n1 != 0 && n2 == 0) {
+        if (n2 == 0) {
           result = n1;
         }
-      case "pow":
-        result = pow(n1, n2).toDouble();
+        break;
     }
-    if (result % 1 == 0) {
-      setState(() {
-        input.text = (result.toInt()).toString();
-      });
-    } else {
-      setState(() {
-        input.text = result.toString();
-      });
-    }
+    String formattedResult = _formResult(result);
+    _savedNum1 = formattedResult;
+    _input.text = formattedResult;
   }
 
-  void toggleSign() {
-    if (input.text.isEmpty || input.text == "0") return;
+  void _toggleSign() {
+    if (_input.text.isEmpty || _input.text == "0") return;
     setState(() {
-      if (input.text.startsWith("-")) {
-        input.text = input.text.substring(1);
+      if (_input.text.startsWith("-")) {
+        _input.text = _input.text.substring(1);
       } else {
-        input.text = "-${input.text}";
+        _input.text = "-${_input.text}";
       }
     });
   }
 
+  late List<Map<String, dynamic>> buttons = [
+    {
+      'title': 'C',
+      'color': Colors.red,
+      'function': (title) => setState(() {
+        _input.text = "";
+        _input2.text = "";
+        _savedNum1 = "";
+        _savedOperator = "";
+      }),
+    },
+    {'title': '⌫', 'color': Colors.orange, 'function': (title) => _delChar()},
+    {
+      'title': '+/-',
+      'color': Colors.orange,
+      'function': (title) => _toggleSign(),
+    },
+    {'title': '/', 'color': Colors.orange, 'function': (title) => _calc("/")},
+
+    {'title': '7', 'function': (title) => _addChar("7")},
+    {'title': '8', 'function': (title) => _addChar("8")},
+    {'title': '9', 'function': (title) => _addChar("9")},
+    {'title': 'x', 'color': Colors.orange, 'function': (title) => _calc("x")},
+
+    {'title': '4', 'function': (title) => _addChar("4")},
+    {'title': '5', 'function': (title) => _addChar("5")},
+    {'title': '6', 'function': (title) => _addChar("6")},
+    {'title': '-', 'color': Colors.orange, 'function': (title) => _calc("-")},
+
+    {'title': '1', 'function': (title) => _addChar("1")},
+    {'title': '2', 'function': (title) => _addChar("2")},
+    {'title': '3', 'function': (title) => _addChar("3")},
+    {'title': '+', 'color': Colors.orange, 'function': (title) => _calc("+")},
+
+    {'title': '0', 'function': (title) => _addChar("0")},
+    {'title': '.', 'function': (title) => _addChar(".")},
+    {
+      'title': '=',
+      'color': Colors.deepOrange,
+      'function': (title) => _equal("="),
+    },
+    {'title': '%', 'color': Colors.orange, 'function': (title) => _calc("%")},
+  ];
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
         appBar: AppBar(
-          title: Text('MY APP'),
+          title: Row(
+            children: [
+              Text('C a l c u l a t o r'),
+              SizedBox(width: 135),
+              Icon(Icons.calculate, size: 40),
+            ],
+          ),
           backgroundColor: Colors.blue,
           foregroundColor: Colors.white,
         ),
         body: Column(
           children: [
-            Expanded(
-              child: Form(
-                child: TextFormField(
-                  maxLength: 10,
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  controller: input,
-                  readOnly: true,
-                  autocorrect: false,
-                  enableSuggestions: false,
-                  decoration: InputDecoration(hintText: "|", counterText: ""),
+            Container(
+              height: 50,
+              padding: const EdgeInsets.all(0),
+              alignment: Alignment.bottomRight,
+              child: TextFormField(
+                controller: _input2,
+                readOnly: true,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
+                ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "0",
                 ),
               ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: _CalcButton(
-                    title: "1",
-                    builder: (title) => addChar(title),
-                  ),
+            Container(
+              clipBehavior: Clip.none,
+              padding: const EdgeInsets.fromLTRB(20, 50, 20, 10),
+              alignment: Alignment.bottomRight,
+              child: TextFormField(
+                controller: _input,
+                readOnly: true,
+                textAlign: TextAlign.right,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 32,
                 ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "2",
-                    builder: (title) => addChar(title),
-                  ),
+                decoration: const InputDecoration(
+                  border: InputBorder.none,
+                  hintText: "0",
                 ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "3",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "del",
-                    builder: (title) => delChar(),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "+",
-                    builder: (title) => calc(title),
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
+              ),
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: _CalcButton(
-                    title: "4",
-                    builder: (title) => addChar(title),
-                  ),
+            // لوحة الأزرار
+            Expanded(
+              flex: 2,
+              child: GridView.builder(
+                physics: NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: buttons.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  mainAxisSpacing: 5,
+                  crossAxisSpacing: 10,
+                  childAspectRatio: 1.32,
                 ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "5",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "6",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "%",
-                    builder: (title) => calc(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "x",
-                    builder: (title) => calc(title),
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: _CalcButton(
-                    title: "7",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "8",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "9",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "pow",
-                    builder: (title) => calc(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "-",
-                    builder: (title) => calc(title),
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: _CalcButton(
-                    title: ".",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "0",
-                    builder: (title) => addChar(title),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "-/+",
-                    builder: (title) => toggleSign(),
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "C",
-                    builder: (title) {
-                      setState(() {
-                        input.text = "";
-                      });
-                    },
-                    color: Colors.red,
-                  ),
-                ),
-                Expanded(
-                  child: _CalcButton(
-                    title: "/",
-                    builder: (title) => calc(title),
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: _CalcButton(
-                    title: "=",
-                    builder: (title) => equal(title),
-                    color: Colors.deepOrange,
-                  ),
-                ),
-              ],
+                itemBuilder: (context, i) {
+                  return _CalcButton(
+                    title: buttons[i]['title'],
+                    color: buttons[i]['color'] ?? Colors.white,
+                    builder: buttons[i]['function'],
+                  );
+                },
+              ),
             ),
           ],
         ),
@@ -321,20 +268,13 @@ class _CalcButton extends StatelessWidget {
   final Color color;
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: EdgeInsets.all(0),
-      width: 90,
-      height: 50,
-      decoration: BoxDecoration(
-        border: Border.all(color: Colors.black, width: 1),
-      ),
-      child: MaterialButton(
-        color: color,
-        onPressed: () => builder(title),
-        child: Text(
-          title,
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
+    return MaterialButton(
+      color: color,
+      shape: CircleBorder(side: BorderSide(color: Colors.black, width: 1)),
+      onPressed: () => builder(title),
+      child: Text(
+        title,
+        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
       ),
     );
   }
