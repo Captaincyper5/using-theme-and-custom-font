@@ -1,2 +1,10 @@
 *.html linguist-vendored
+*.cpp linguist-vendored
+*.c linguist-vendored
+*.swift linguist-vendored
 web/* linguist-documentation
+android/* linguist-documentation
+ios/* linguist-documentation
+windows/* linguist-documentation
+linux/* linguist-documentation
+macos/* linguist-documentation
